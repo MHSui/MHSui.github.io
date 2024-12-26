@@ -1,8 +1,394 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隋明慧作品網站</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            height: 100%;
+        }
+        
+        #banner {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #menu {
+            position: fixed;
+            left: -200px;
+            top: 0;
+            width: 150px;
+            height: 100vh;
+            background-color: #333;
+            color: white;
+            padding: 30px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column; /* 使選單項目從上往下排列 */
+            justify-content: flex-start; /* 使選單項目靠上排列 */
+            align-items: center; /* 使選單項目靠中對齊 */
+        }
+
+        #menu a {
+            position: relative;
+            color: white;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+            font-size: 14px;
+            text-align: center; /* 文字靠中對齊 */
+        }
+
+        #menu a::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -5px;
+            height: 2px; /* 調整高度 */
+            background-color: transparent;
+            transition: background-color 0.3s;
+        }
+
+        #menu a.selected::after {
+            background-color: yellow;
+        }
+
+        #menu-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 35px;
+            height: 35px;
+            background-color: #333;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 1001;
+            font-size: 14px;
+        }
+
+        #menu.open {
+            left: 0;
+        }
+
+        #banner h1 {
+            z-index: 2;
+            position: relative;
+            font-size: 2rem; /* 將字體大小縮小一半 */
+            transition: transform 0.5s ease;
+        }
+
+        #banner p {
+            margin-top: 10px; /* 調整 margin */
+            font-size: 20px; /* 將字體大小縮小一半 */
+            opacity: 0;
+            transition: opacity 0.5s;
+            max-width: 600px; /* 設置更大寬度 */
+            padding: 10px; /* 添加內邊距 */
+            border: 1px solid white; /* 添加邊框 */
+            border-radius: 10px; /* 圓角邊框 */
+            background-color: rgba(0, 0, 0, 0.6); /* 背景顏色 */
+            color: white;
+        }
+
+        #banner.show p {
+            opacity: 1;
+        }
+
+        #audio-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px; /* 調整 padding */
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 12px;
+        }
+
+        /* 新增樣式，白色背景時文字變黑色 */
+        #banner.white-background h1,
+        #banner.white-background p {
+            color: black;
+            border-color: black;
+        }
+
+        #banner.white-background p {
+            background-color: transparent;
+        }
+
+        /* Centered heading */
+        #banner.center h1 {
+            transform: translateY(-50%);
+            top: 50%;
+            position: absolute;
+        }
+
+        /* Title slide-up */
+        #banner h1.slide-up {
+            transform: translateY(-450%);
+        }
+    </style>
+</head>
 <body>
-<h1>水水</h1>
-<p>其他平台：</p> 
-<p> <a href="https://www.facebook.com/water.painting.water/">facebook:水水</a> </p>
+    <div id="banner" class="center">
+        <canvas id="visualizer"></canvas>
+        <h1>隋明慧作品網站</h1>
+        <p>我是隋明慧，今年22歲，畢業於臺北科技大學互動設計系。<br>
+            從小熱愛繪畫與寫作，這份對設計和藝術的熱情驅使我不斷探索與培養美感，<br>
+            高中就讀公立高中廣告設計系，正式踏入設計專業學習。<br>
+            我擅長多媒體互動設計、插畫設計、平面設計、企業識別(CIS)設計、使用者介面(UI)設計、3D建模、動畫與剪輯，<br>對許多設計工具都有實作經驗。</p>
+    </div>
+
+    <div id="menu">
+        <a href="#about" id="about">個人簡介</a>
+        <a href="#" id="change-image">變更背景</a>
+        <a href="#" id="go-home">返回首頁</a>
+    </div>
+
+    <div id="menu-button">☰</div>
+
+    <button id="audio-toggle">Mute Audio</button>
+
+    <audio id="background-audio" loop>
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3" type="audio/mp3">
+    </audio>
+    <script>
+        // Menu toggle functionality
+        const menu = document.getElementById('menu');
+        const menuButton = document.getElementById('menu-button');
+
+        menuButton.addEventListener('click', () => {
+            menu.classList.toggle('open');
+        });
+
+        // Visualizer setup
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Track the current background color
+        let backgroundColor = 'black';
+
+        // Particle effect
+        const particles = [];
+        const mouseParticles = [];
+        const clickParticles = [];
+        const mouse = { x: null, y: null, radius: 800 };
+
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            for (let i = 0; i < 5; i++) {
+                mouseParticles.push(new Particle(e.clientX, e.clientY, true));
+            }
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        canvas.addEventListener('click', (e) => {
+            for (let i = 0; i < 100; i++) { // 增加黃色發散粒子的數量到 100
+                clickParticles.push(new Particle(e.clientX, e.clientY, false, true));
+            }
+        });
+
+        class Particle {
+            constructor(x, y, isMouseParticle = false, isClickParticle = false) {
+                this.x = x;
+                this.y = y;
+                this.size = isClickParticle ? Math.random() * 5 + 2.5 : Math.random() * 2.5 + 0.5; // 將大小縮小一半
+                this.speedX = isClickParticle ? (Math.random() * 3 - 1.5) * 2 : Math.random() * 3 - 1.5; // 增加速度以使其更明顯
+                this.speedY = isClickParticle ? (Math.random() * 3 - 1.5) * 2 : Math.random() * 3 - 1.5; // 增加速度以使其更明顯
+                this.color = isClickParticle ? 'yellow' : `hsl(${Math.random() * 360}, 100%, 50%)`;
+                this.opacity = isClickParticle ? 1 : Math.random(); // Click particles are more visible
+                this.isMouseParticle = isMouseParticle;
+                this.isClickParticle = isClickParticle;
+                if (this.isMouseParticle) {
+                    this.color = backgroundColor === 'white' ? `hsl(${Math.random() * 360}, 100%, 50%)` : 'white';
+                    this.opacity = 1;
+                }
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (!this.isMouseParticle) {
+                    if (this.size > 0.15) this.size *= 0.99; // 將大小縮小一半
+                    if (this.opacity > 0.005) this.opacity *= 0.99;
+                    if (this.isClickParticle) {
+                        this.size *= 0.95;
+                    }
+                    // Mouse interaction
+                    if (mouse.x && mouse.y) {
+                        const dx = this.x - mouse.x;
+                        const dy = this.y - mouse.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < mouse.radius && !this.isClickParticle) {
+                            const angle = Math.atan2(dy, dx);
+                            const force = (mouse.radius - distance) / mouse.radius;
+                            const forceX = force * Math.cos(angle);
+                            const forceY = force * Math.sin(angle);
+                            this.speedX -= forceX;
+                            this.speedY -= forceY;
+                            if (backgroundColor !== 'white') {
+                                this.color = 'white'; // 被吸引变成白色 (如果背景不是白色)
+                            }
+                        }
+                    }
+                } else {
+                    this.size *= 0.95;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.fill();
+                ctx.globalAlpha = 1; // Reset global alpha
+            }
+        }
+
+        function handleParticles(particleArray) {
+            for (let i = 0; i < particleArray.length; i++) {
+                particleArray[i].update();
+                particleArray[i].draw();
+                if (particleArray[i].size < 0.15) { // 將大小縮小一半
+                    particleArray.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        function createRandomParticles(count) {
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            handleParticles(particles);
+            handleParticles(mouseParticles);
+            handleParticles(clickParticles);
+            createRandomParticles(8); // 每帧随机生成粒子
+            requestAnimationFrame(animate);
+        }
+
+        createRandomParticles(500); // 初始生成一定数量的粒子
+        animate();
+
+        // Audio visualization
+        const audioToggle = document.getElementById('audio-toggle');
+        const audio = document.getElementById('background-audio');
+        let isMuted = false;
+
+        audio.play();
+
+        audioToggle.addEventListener('click', () => {
+            if (isMuted) {
+                audio.play();
+                audioToggle.textContent = 'Mute Audio';
+            } else {
+                audio.pause();
+                audioToggle.textContent = 'Play Audio';
+            }
+            isMuted = !isMuted;
+        });
+
+        // Event listeners
+        document.querySelectorAll('#menu a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                // 如果當前選項已經被選中，則取消選中
+                if (e.currentTarget.classList.contains('selected')) {
+                    e.currentTarget.classList.remove('selected');
+                } else {
+                    // 移除所有選項的selected類
+                    document.querySelectorAll('#menu a').forEach(link => {
+                        link.classList.remove('selected');
+                    });
+                    // 添加selected類到當前選項
+                    e.currentTarget.classList.add('selected');
+                }
+            });
+        });
+
+        document.getElementById('about').addEventListener('click', (e) => {
+            e.preventDefault();
+            const heading = document.querySelector('#banner h1');
+            const bio = document.querySelector('#banner p');
+
+            if (heading.classList.contains('slide-up')) {
+                heading.classList.remove('slide-up');
+                bio.style.opacity = '0'; // 隱藏個人簡介
+            } else {
+                heading.classList.add('slide-up');
+                bio.style.opacity = '1'; // 顯示個人簡介
+            }
+        });
+
+        document.getElementById('change-image').addEventListener('click', (e) => {
+            e.preventDefault();
+            const banner = document.getElementById('banner');
+            if (backgroundColor === 'black') {
+                banner.style.background = "white"; // Change background to white
+                banner.classList.add('white-background'); // Add class for white background
+                backgroundColor = 'white'; // Update the background color variable
+            } else {
+                banner.style.background = "black"; // Change background to black
+                banner.classList.remove('white-background'); // Remove class for white background
+                backgroundColor = 'black'; // Update the background color variable
+            }
+        });
+
+        document.getElementById('go-home').addEventListener('click', (e) => {
+            e.preventDefault();
+            location.reload();
+        });
+    </script>
 </body>
 </html>
